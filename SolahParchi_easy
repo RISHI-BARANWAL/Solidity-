@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SolahParchiThap {
+    address public owner;
+    address[4] public players;
+    address public currentTurn;
+    uint8[4][4] public gameState;
+    uint public startTime;
+
+    
+    constructor() {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyPlayer() {
+        require(isPlayer(msg.sender), "You are not a player in this game");
+        _;
+    }
+
+    function isPlayer(address player) private view returns(bool) {
+        for (uint i = 0; i < 4; i++) {
+            if (players[i] == player) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // To set and start the game
+    function setState(address[4] players, uint8[4][4] parchis) public onlyPlayer{
+        // Initialize game state
+        players = players;
+        currentTurn = players[0];
+        gameState = parchis;
+        startTime = block.timestamp;
+    }
+
+    // To pass the parchi to next player
+    function passParchi(uint8 parchi) public onlyPlayer{
+        // Logic to pass a parchi during the game
+    }
+
+    // To claim win
+    function claimWin() public onlyPlayer{
+        // Logic to claim victory if the player has 4 parchis of the same type
+    }
+
+    // To end the game
+    function endGame() public {
+        require(block.timestamp >= startTime + 1 hours, "At least 1 hour must pass since the start of the game");
+        // Logic to end the game without declaring a winner
+    }
+
+    // To see the number of wins
+    function getWins(address add) public view returns (uint256) {
+        //Logic to get the number of wins for a player
+    }
+
+    // To see the parchis held by the caller of this function
+    function myParchis() public view returns (uint8[4]) {
+        // Logic to return the parchis of the calling player
+    }
+
+    // To get the state of the game
+    function getState() public view returns (address[4], address, uint8[4][4]) {
+        return (players, currentTurn, gameState);
+    }
+
+}
