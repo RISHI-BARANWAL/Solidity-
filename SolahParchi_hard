@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ParchiThap {
+    address public owner;
+    address[4] public players;
+    address public currentTurn;
+    uint8[4][4] public gameState;
+    uint public startTime;
+    mapping(address => uint) public wins;
+    mapping(address => uint8[4]) public playerParchis;
+    bool public gameInProgress;
+
+    constructor() {
+        owner = msg.sender;
+        gameInProgress = false;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyPlayer() {
+        require(isPlayer(msg.sender), "You are not a player in this game");
+        _;
+    }
+
+    function isPlayer(address player) private view returns(bool) {
+        for (uint i = 0; i < 4; i++) {
+            if (players[i] == player) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function startGame(address[4] memory _players, uint8[4][4] memory _state) public onlyOwner {
+        require(!gameInProgress, "Game is already in progress");
+        players = _players;
+        currentTurn = players[0];
+        gameState = _state;
+        startTime = block.timestamp;
+        gameInProgress = true;
+        for (uint i = 0; i < 4; i++) {
+            playerParchis[players[i]] = _state[i];
+        }
+    }
+
+    function passParchi(uint8 _type) public onlyPlayer {
+        require(playerParchis[msg.sender][_type - 1] > 0, "You don't have any parchis of this type");
+        playerParchis[msg.sender][_type - 1]--;
+        uint nextPlayerIndex = (getPlayerIndex(msg.sender) + 1) % 4;
+        playerParchis[players[nextPlayerIndex]][_type - 1]++;
+        currentTurn = players[nextPlayerIndex];
+    }
+
+    function endGame() public {
+        require(block.timestamp >= startTime + 1 hours, "At least 1 hour must pass since the start of the game");
+        resetGame();
+    }
+
+    function claimWin() public onlyPlayer {
+        uint8[4] memory parchis = playerParchis[msg.sender];
+        for (uint i = 0; i < 4; i++) {
+            require(parchis[i] == 4, "You don't have 4 parchis of the same type");
+        }
+        wins[msg.sender]++;
+        resetGame();
+    }
+
+    function getPlayerIndex(address player) internal view returns(uint) {
+        for (uint i = 0; i < 4; i++) {
+            if (players[i] == player) {
+                return i;
+            }
+        }
+        revert("Player not found");
+    }
+
+    function resetGame() internal {
+        for (uint i = 0; i < 4; i++) {
+            for (uint j = 0; j < 4; j++) {
+                gameState[i][j] = 0;
+            }
+        }
+        gameInProgress = false;
+    }
+
+    function getWins(address player) public view returns(uint) {
+        return wins[player];
+    }
+
+    function myParchis() public view onlyPlayer returns(uint8[4] memory) {
+        return playerParchis[msg.sender];
+    }
+
+    function getState() public view onlyOwner returns(address[4] memory, address, uint8[4][4] memory) {
+        return (players, currentTurn, gameState);
+    }
+}
